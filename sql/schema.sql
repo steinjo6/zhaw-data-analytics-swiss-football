@@ -11,6 +11,7 @@ CREATE TABLE municipalities (
     language_region VARCHAR(30) NOT NULL, -- e.g. 'German', 'French', 'Italian'
     postal_code VARCHAR(10),
     population INTEGER,
+    area_km2 NUMERIC(10, 2),
     youth_share_pct NUMERIC(5,2),
     median_income_chf NUMERIC(12,2),
     tax_strength_index NUMERIC(8,2),
