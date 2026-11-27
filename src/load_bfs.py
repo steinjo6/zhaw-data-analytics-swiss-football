@@ -657,6 +657,51 @@ def load_municipalities(
     with engine.begin() as conn:
         conn.execute(upsert_sql, records)
 
+    with engine.connect() as conn:
+        stats = conn.execute(
+            text(
+                """
+                SELECT
+                    COUNT(*) AS total,
+                    COUNT(postal_code) AS postal_code,
+                    COUNT(population) AS population,
+                    COUNT(area_km2) AS area_km2,
+                    COUNT(youth_share_pct) AS youth_share_pct,
+                    COUNT(median_income_chf) AS median_income_chf,
+                    COUNT(tax_strength_index) AS tax_strength_index,
+                    COUNT(latitude) AS latitude,
+                    COUNT(longitude) AS longitude
+                FROM municipalities;
+                """
+            )
+        ).mappings().one()
+        lang_rows = conn.execute(
+            text(
+                """
+                SELECT language_region, COUNT(*) AS cnt
+                FROM municipalities
+                GROUP BY language_region
+                ORDER BY cnt DESC;
+                """
+            )
+        ).all()
+
+    print("Validierungs-Report (municipalities):")
+    print(f"  - Gesamtzahl Gemeinden: {stats['total']}")
+    for col in (
+        "postal_code",
+        "population",
+        "area_km2",
+        "youth_share_pct",
+        "median_income_chf",
+        "tax_strength_index",
+        "latitude",
+        "longitude",
+    ):
+        print(f"  - {col}: {stats[col]} Nicht-NULL")
+    lang_summary = ", ".join(f"{lang}={cnt}" for lang, cnt in lang_rows)
+    print(f"  - Sprachregionen: {lang_summary}")
+
     return len(records)
 
 
