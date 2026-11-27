@@ -36,7 +36,7 @@ Das Projekt untersucht den Zusammenhang zwischen **regionaler Wirtschaftskraft &
 | Komponente | Pfad | Status | Bemerkung |
 | :--- | :--- | :--- | :--- |
 | Datenbank-Schema | [sql/schema.sql](./sql/schema.sql) | ✅ Abgeschlossen | Tabellen `municipalities`, `clubs`, `players` inkl. Indizes angelegt |
-| DB-Verbindung | [src/db.py](./src/db.py) | 🟡 Absichern nötig | Funktioniert, aber `__main__` führt aktuell `DROP TABLE` über `schema.sql` aus! Siehe Task `1.1` |
+| DB-Verbindung | [src/db.py](./src/db.py) | ✅ Abgeschlossen | Non-destruktiver Verbindungstest mit Tabellen-Counts; Schema-Reset nur noch über `--reset-schema` + Bestätigung |
 | Abhängigkeiten | [requirements.txt](./requirements.txt) | ⬜ Offen | Datei existiert, aktuell leer (0 Zeilen) |
 | Env-Vorlage | [.env.example](./.env.example) | ⬜ Offen | Datei existiert, aktuell leer (0 Zeilen) |
 | AI-Protokoll | [docs/AI_USAGE.md](./docs/AI_USAGE.md) | ✅ Angelegt (laufend) | Initial-Setup (`main` mit Gemini Argon) & Roadmap-Review dokumentiert |
@@ -109,7 +109,7 @@ Jede Anforderung aus [TASK_DESCRIPTION.md](./TASK_DESCRIPTION.md) ist hier fest 
 
 > **Warum zuerst?** Im Onboarding-PDF steht in Schritt 4 der Befehl `python src/db.py` zum Verbindungstest. Aktuell löscht dieser Aufruf über `sql/schema.sql` die gesamte Datenbank! Task `1.1` behebt diese Gefahr sofort.
 
-- [ ] **1.1 [src/db.py](./src/db.py) gegen versehentliches Löschen absichern**
+- [x] **1.1 [src/db.py](./src/db.py) gegen versehentliches Löschen absichern**
   - **Konkrete Umsetzung in [src/db.py](./src/db.py):**
     - `argparse` im `if __name__ == "__main__":`-Block ergänzen mit optionalem Flag `--reset-schema` (`action="store_true"`).
     - **Standardverhalten (`python src/db.py` oder `python -m src.db` OHNE Flag):**

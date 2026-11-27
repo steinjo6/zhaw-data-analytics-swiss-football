@@ -1,3 +1,4 @@
+import argparse
 import os
 from pathlib import Path
 from dotenv import load_dotenv
@@ -7,6 +8,8 @@ from sqlalchemy.engine import Engine
 # Projekt-Wurzelverzeichnis ermitteln und lokale .env laden
 BASE_DIR = Path(__file__).resolve().parent.parent
 load_dotenv(BASE_DIR / ".env")
+
+MANAGED_TABLES = ("municipalities", "clubs", "players")
 
 
 def get_engine() -> Engine:
@@ -31,10 +34,74 @@ def run_sql_file(sql_path: str | Path, engine: Engine | None = None) -> None:
         conn.execute(text(sql_content))
 
 
-if __name__ == "__main__":
+def get_table_counts(engine: Engine) -> dict[str, int | None]:
+    """Prüft die Existenz der verwalteten Tabellen und gibt deren Zeilenanzahl zurück."""
+    counts: dict[str, int | None] = {}
+    with engine.connect() as conn:
+        for table in MANAGED_TABLES:
+            exists = conn.execute(
+                text("SELECT to_regclass(:table_name) IS NOT NULL;"),
+                {"table_name": f"public.{table}"},
+            ).scalar()
+            if exists:
+                counts[table] = conn.execute(
+                    text(f"SELECT COUNT(*) FROM public.{table};")
+                ).scalar_one()
+            else:
+                counts[table] = None
+    return counts
+
+
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(
+        description="Prüft die PostgreSQL-Verbindung und Tabellenstände (ohne destruktive Aktionen)."
+    )
+    parser.add_argument(
+        "--reset-schema",
+        action="store_true",
+        help="Führt sql/schema.sql aus (ACHTUNG: löscht bestehende Tabellen und Daten!).",
+    )
+    parser.add_argument(
+        "--yes",
+        action="store_true",
+        help="Bestätigt --reset-schema ohne interaktive Eingabeaufforderung.",
+    )
+    return parser.parse_args()
+
+
+def main() -> None:
+    args = parse_args()
     eng = get_engine()
+
     with eng.connect() as conn:
         version = conn.execute(text("SELECT version();")).scalar()
-        print("Verbunden mit:", version)
+    print("Verbunden mit:", version)
+
+    counts = get_table_counts(eng)
+    print("Tabellenstatus:")
+    for table, count in counts.items():
+        if count is None:
+            print(f"  - {table}: nicht vorhanden")
+        else:
+            print(f"  - {table}: {count} Zeilen")
+
+    if args.reset_schema:
+        if not args.yes:
+            try:
+                confirm = input(
+                    "ACHTUNG: Alle Tabellen und Daten werden zurückgesetzt! "
+                    "Tippe 'RESET' zum Bestätigen: "
+                )
+            except (EOFError, KeyboardInterrupt):
+                print("\nAbgebrochen. Schema wurde nicht zurückgesetzt.")
+                return
+            if confirm.strip() != "RESET":
+                print("Abgebrochen. Schema wurde nicht zurückgesetzt.")
+                return
+
         run_sql_file("sql/schema.sql", engine=eng)
         print("Schema sql/schema.sql erfolgreich ausgeführt.")
+
+
+if __name__ == "__main__":
+    main()
