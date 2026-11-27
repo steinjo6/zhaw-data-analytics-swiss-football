@@ -40,7 +40,7 @@ Das Projekt untersucht den Zusammenhang zwischen **regionaler Wirtschaftskraft &
 | Abhängigkeiten | [requirements.txt](./requirements.txt) | ✅ Abgeschlossen | Alle 19 Pakete definiert und Installation in `.venv` (Python 3.14) verifiziert |
 | Env-Vorlage | [.env.example](./.env.example) | ✅ Abgeschlossen | `DATABASE_URL`-Platzhalterzeile eingetragen |
 | AI-Protokoll | [docs/AI_USAGE.md](./docs/AI_USAGE.md) | ✅ Angelegt (laufend) | Initial-Setup (`main` mit Gemini Argon) & Roadmap-Review dokumentiert |
-| BFS-Gemeinde-Loader | [src/load_bfs.py](./src/load_bfs.py) | 🟡 Teilweise fertig | Basis (`bfs_id`, Name, Kanton, Sprache, Einwohner, Fläche) steht; 6 Spalten noch `None` |
+| BFS-Gemeinde-Loader | [src/load_bfs.py](./src/load_bfs.py) | ✅ Abgeschlossen | Alle 2'110 Gemeinden inkl. PLZ, WGS84-Koordinaten, Jugendanteil, Medianeinkommen, Steuerkraft-Index & Sprachregionen geladen |
 | Transfermarkt-Scraper | [src/scrape_tm.py](./src/scrape_tm.py) | ⬜ Offen | Datei existiert, aktuell leer (0 Zeilen) |
 | Notebook 1: Integration & EDA | [notebooks/01_integration_eda.ipynb](./notebooks/01_integration_eda.ipynb) | ⬜ Offen | Datei existiert, noch ohne Zellen |
 | Notebook 2: Statistik & Clustering | [notebooks/02_statistics_clustering.ipynb](./notebooks/02_statistics_clustering.ipynb) | ⬜ Offen | Datei existiert, noch ohne Zellen |
@@ -168,7 +168,7 @@ Jede Anforderung aus [TASK_DESCRIPTION.md](./TASK_DESCRIPTION.md) ist hier fest 
 Aktuell setzt [src/load_bfs.py](./src/load_bfs.py) folgende 6 Spalten auf `None`:
 `postal_code`, `youth_share_pct`, `median_income_chf`, `tax_strength_index`, `latitude`, `longitude`.
 
-- [ ] **2.1 Offizielle Schweizer Open-Data-Quellen automatisch laden oder in `data/raw/` ablegen**
+- [x] **2.1 Offizielle Schweizer Open-Data-Quellen automatisch laden oder in `data/raw/` ablegen**
   - Bevorzugt: Einen reproduzierbaren Download-Helper `download_bfs_sources()` (oder direktes Laden per URL mit lokalem Fallback in `data/raw/`) implementieren, damit kein Teammitglied Dateien manuell zusammensuchen muss:
     1. **PLZ & Geokoordinaten (`postal_code`, `latitude`, `longitude`):**
        - Quelle: **swisstopo – Amtliches Ortschaftenverzeichnis (`AMTOVZ_CSV_WGS84.csv` / `AMTOVZ_CSV_LV95.csv`)** via `data.geo.admin.ch` (`https://data.geo.admin.ch/ch.swisstopo.amtliches-ortschaftenverzeichnis/amtliches-ortschaftenverzeichnis_ch/amtliches-ortschaftenverzeichnis_ch_2056.csv.zip`).
@@ -186,13 +186,13 @@ Aktuell setzt [src/load_bfs.py](./src/load_bfs.py) folgende 6 Spalten auf `None`
        - Quelle: **ESTV Direkte Bundessteuer – Natürliche Personen auf Gemeindeebene** (`opendata.swiss` / `estv.admin.ch`, Excel/CSV „Steuerbares Einkommen / Reineinkommen pro Gemeinde“).
        - `median_income_chf`: Median (oder Mittelwert, falls Median für Kleinstgemeinden gesperrt ist – im Code klar dokumentieren!) des Reineinkommens / steuerbaren Einkommens der steuerpflichtigen natürlichen Personen in CHF.
        - `tax_strength_index`: Bundessteuer-Kopfquote pro Einwohner relativ zum Schweizer Mittel $\times 100$ (Schweizer Durchschnitt $= 100.0$), berechnet als `(bundessteuer_ertrag_pro_kopf / ch_mittelwert) * 100`. So hat jede Gemeinde einen konsistenten, schweizweit vergleichbaren Index!
-- [ ] **2.2 Sprachregionen für zweisprachige Kantone (`BE`, `FR`, `VS`, `GR`) präzisieren**
+- [x] **2.2 Sprachregionen für zweisprachige Kantone (`BE`, `FR`, `VS`, `GR`) präzisieren**
   - In [src/load_bfs.py](./src/load_bfs.py) ein explizites Dictionary `BFS_LANG_OVERRIDES: dict[int, str]` (bzw. BFS-Sprachgebiete-CSV) einbauen, das nach dem Kantons-Default greift:
     - Kanton **VS** (Default im Oberwallis `'German'`, Unter-/Mittelwallis `'French'`): Sicherstellen, dass u. a. `6266` (*Sion*), `6248` (*Sierre*), `6136` (*Martigny*), `6153` (*Monthey*) `'French'` erhalten, während *Brig-Glis* (`6002`), *Visp* (`6297`), *Naters* (`6007`) `'German'` erhalten.
     - Kanton **BE**: Französischsprachiger Berner Jura (`bfs_id` 431–449, 681–716, 721–726) → `'French'`; *Biel/Bienne* (`371`) → `'German'` (Mehrheitssprache Deutsch, Zweisprachigkeit in EDA erwähnen).
     - Kanton **FR**: Sensebezirk (`bfs_id` 2291–2311) & Seebezirk-Deutschgemeinden (*Murten/Morat* `2275`, *Kerzers* `2265`) → `'German'`; *Fribourg* (`2196`) & *Bulle* (`2125`) → `'French'`.
     - Kanton **GR**: Italienischbünden (Bezirke Bernina/Moesa/Bregaglia) → `'Italian'`; *Chur* (`3901`) → `'German'`.
-- [ ] **2.3 Modularen Upsert & Validierungs-Report in [src/load_bfs.py](./src/load_bfs.py) fertigstellen**
+- [x] **2.3 Modularen Upsert & Validierungs-Report in [src/load_bfs.py](./src/load_bfs.py) fertigstellen**
   - Am Ende von `load_municipalities()` eine Kontrollabfrage ausführen und ausgeben:
     - Gesamtzahl Gemeinden in `municipalities` (erwartet: ~2'100+ Schweizer Gemeinden).
     - Anzahl Nicht-`NULL`-Werte je Spalte (`postal_code`, `population`, `area_km2`, `youth_share_pct`, `median_income_chf`, `tax_strength_index`, `latitude`, `longitude`).
