@@ -168,7 +168,7 @@ Jede Anforderung aus [TASK_DESCRIPTION.md](./TASK_DESCRIPTION.md) ist hier fest 
 Aktuell setzt [src/load_bfs.py](./src/load_bfs.py) folgende 6 Spalten auf `None`:
 `postal_code`, `youth_share_pct`, `median_income_chf`, `tax_strength_index`, `latitude`, `longitude`.
 
-- [ ] **2.1 Offizielle Schweizer Open-Data-Quellen automatisch laden oder in `data/raw/` ablegen**
+- [x] **2.1 Offizielle Schweizer Open-Data-Quellen automatisch laden oder in `data/raw/` ablegen**
   - Bevorzugt: Einen reproduzierbaren Download-Helper `download_bfs_sources()` (oder direktes Laden per URL mit lokalem Fallback in `data/raw/`) implementieren, damit kein Teammitglied Dateien manuell zusammensuchen muss:
     1. **PLZ & Geokoordinaten (`postal_code`, `latitude`, `longitude`):**
        - Quelle: **swisstopo – Amtliches Ortschaftenverzeichnis (`AMTOVZ_CSV_WGS84.csv` / `AMTOVZ_CSV_LV95.csv`)** via `data.geo.admin.ch` (`https://data.geo.admin.ch/ch.swisstopo.amtliches-ortschaftenverzeichnis/amtliches-ortschaftenverzeichnis_ch/amtliches-ortschaftenverzeichnis_ch_2056.csv.zip`).
