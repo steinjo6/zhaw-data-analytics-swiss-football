@@ -41,9 +41,66 @@ CANTON_TO_LANG = {
     "ZH": "German",
     "GE": "French", "JU": "French", "NE": "French", "VD": "French",
     "TI": "Italian",
-    # Zweisprachige Kantone bei Bedarf gezielt verfeinern (Task 2.2):
+    # Zweisprachige Kantone (Basis-Default, wird über BFS_LANG_OVERRIDES & swisstopo verfeinert):
     "BE": "German", "FR": "French", "VS": "French", "GR": "German",
 }
+
+SWISSTOPO_LANG_MAP = {
+    "de": "German",
+    "fr": "French",
+    "it": "Italian",
+}
+
+# Explizite Sprachregion-Overrides für zweisprachige/mehrsprachige Kantone (BE, FR, VS, GR)
+BFS_LANG_OVERRIDES: dict[int, str] = {
+    # BE: Französischsprachiger Berner Jura -> French; Biel/Bienne -> German (Mehrheitssprache)
+    **{bfs_id: "French" for bfs_id in range(431, 451)},
+    **{bfs_id: "French" for bfs_id in range(681, 718)},
+    **{bfs_id: "French" for bfs_id in range(721, 727)},
+    371: "German",   # Biel/Bienne (zweisprachig, Mehrheit Deutsch)
+    # FR: Sensebezirk & deutschsprachige Seebezirk-Gemeinden -> German; Fribourg/Bulle -> French
+    **{bfs_id: "German" for bfs_id in range(2291, 2312)},
+    2275: "German",  # Murten/Morat
+    2265: "German",  # Kerzers
+    2196: "French",  # Fribourg
+    2125: "French",  # Bulle
+    # VS: Unter-/Mittelwallis -> French; Oberwallis -> German
+    6266: "French",  # Sion
+    6248: "French",  # Sierre
+    6136: "French",  # Martigny
+    6153: "French",  # Monthey
+    6002: "German",  # Brig-Glis
+    6297: "German",  # Visp
+    6007: "German",  # Naters
+    # GR: Italienischbünden (Bernina, Bregaglia, Moesa) -> Italian; Chur -> German
+    3551: "Italian",  # Brusio
+    3561: "Italian",  # Poschiavo
+    3792: "Italian",  # Bregaglia
+    3804: "Italian",  # Buseno
+    3805: "Italian",  # Castaneda
+    3808: "Italian",  # Rossa
+    3810: "Italian",  # Santa Maria in Calanca
+    3821: "Italian",  # Lostallo
+    3822: "Italian",  # Mesocco
+    3823: "Italian",  # Soazza
+    3831: "Italian",  # Cama
+    3832: "Italian",  # Grono
+    3834: "Italian",  # Roveredo (GR)
+    3835: "Italian",  # San Vittore
+    3837: "Italian",  # Calanca
+    3901: "German",   # Chur
+}
+
+
+def resolve_language_region(
+    bfs_id: int, canton: str, swisstopo_lang: str | None = None
+) -> str:
+    """Bestimmt die Sprachregion (`German`, `French`, `Italian`) deterministisch."""
+    if bfs_id in BFS_LANG_OVERRIDES:
+        return BFS_LANG_OVERRIDES[bfs_id]
+    if swisstopo_lang in {"German", "French", "Italian"}:
+        return swisstopo_lang
+    return CANTON_TO_LANG.get(canton, "German")
 
 
 def _http_session() -> requests.Session:
@@ -166,7 +223,10 @@ def load_communes(communes_file: Path) -> pd.DataFrame:
     df["bfs_id"] = df["bfs_id"].astype(int)
     df["municipality_name"] = df["municipality_name"].astype(str).str.strip()
     df["canton"] = df["canton"].astype(str).str.strip().str.upper().str[:2]
-    df["language_region"] = df["canton"].map(CANTON_TO_LANG).fillna("German")
+    df["language_region"] = [
+        resolve_language_region(bid, canton)
+        for bid, canton in zip(df["bfs_id"], df["canton"])
+    ]
 
     return (
         df[["bfs_id", "municipality_name", "canton", "language_region"]]
@@ -248,6 +308,11 @@ def load_swisstopo_places(zip_path: Path) -> pd.DataFrame:
     df["latitude"] = _parse_numeric(df["N"])
     df["canton"] = df["Kantonskürzel"].astype(str).str.strip().str.upper()
     df["municipality_name"] = df["Gemeindename"].astype(str).str.strip()
+    df["swisstopo_lang"] = (
+        df["Sprache"].astype(str).str.strip().str.lower().map(SWISSTOPO_LANG_MAP)
+        if "Sprache" in df.columns
+        else None
+    )
 
     # Liechtenstein (Kantonskürzel fehlt) und nicht-politische Spezialgebiete ausschliessen
     df = df[
@@ -259,22 +324,43 @@ def load_swisstopo_places(zip_path: Path) -> pd.DataFrame:
     df = df[~df["bfs_id"].isin(NON_MUNICIPALITY_BFS_IDS)].copy()
     df["plz4"] = df["plz4"].astype(int)
 
+    def _mode_lang(series: pd.Series) -> str | None:
+        valid = series.dropna()
+        if valid.empty:
+            return None
+        return str(valid.mode().iloc[0])
+
     grouped = (
         df.groupby("bfs_id", as_index=False)
         .agg(
             municipality_name=("municipality_name", "first"),
             canton=("canton", "first"),
+            swisstopo_lang=("swisstopo_lang", _mode_lang),
             postal_code_int=("plz4", "min"),
             latitude=("latitude", "mean"),
             longitude=("longitude", "mean"),
         )
     )
+    grouped["language_region"] = [
+        resolve_language_region(int(bid), str(canton), lang)
+        for bid, canton, lang in zip(
+            grouped["bfs_id"], grouped["canton"], grouped["swisstopo_lang"]
+        )
+    ]
     grouped["postal_code"] = grouped["postal_code_int"].astype(int).astype(str).str.zfill(4)
     grouped["latitude"] = grouped["latitude"].round(6)
     grouped["longitude"] = grouped["longitude"].round(6)
 
     return grouped[
-        ["bfs_id", "municipality_name", "canton", "postal_code", "latitude", "longitude"]
+        [
+            "bfs_id",
+            "municipality_name",
+            "canton",
+            "language_region",
+            "postal_code",
+            "latitude",
+            "longitude",
+        ]
     ]
 
 
@@ -454,9 +540,13 @@ def load_municipalities(
 
     if communes_file.exists():
         df_comm = load_communes(communes_file)
+        lang_lookup = df_sw.set_index("bfs_id")["language_region"].to_dict()
+        df_comm["language_region"] = [
+            BFS_LANG_OVERRIDES.get(int(bid), lang_lookup.get(int(bid), lang))
+            for bid, lang in zip(df_comm["bfs_id"], df_comm["language_region"])
+        ]
     else:
-        df_comm = df_sw[["bfs_id", "municipality_name", "canton"]].copy()
-        df_comm["language_region"] = df_comm["canton"].map(CANTON_TO_LANG).fillna("German")
+        df_comm = df_sw[["bfs_id", "municipality_name", "canton", "language_region"]].copy()
 
     df_rp = load_regional_portraits(sources["regional_portraits"])
     df_sp = load_statpop_2025(sources["statpop"])

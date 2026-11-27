@@ -186,7 +186,7 @@ Aktuell setzt [src/load_bfs.py](./src/load_bfs.py) folgende 6 Spalten auf `None`
        - Quelle: **ESTV Direkte Bundessteuer – Natürliche Personen auf Gemeindeebene** (`opendata.swiss` / `estv.admin.ch`, Excel/CSV „Steuerbares Einkommen / Reineinkommen pro Gemeinde“).
        - `median_income_chf`: Median (oder Mittelwert, falls Median für Kleinstgemeinden gesperrt ist – im Code klar dokumentieren!) des Reineinkommens / steuerbaren Einkommens der steuerpflichtigen natürlichen Personen in CHF.
        - `tax_strength_index`: Bundessteuer-Kopfquote pro Einwohner relativ zum Schweizer Mittel $\times 100$ (Schweizer Durchschnitt $= 100.0$), berechnet als `(bundessteuer_ertrag_pro_kopf / ch_mittelwert) * 100`. So hat jede Gemeinde einen konsistenten, schweizweit vergleichbaren Index!
-- [ ] **2.2 Sprachregionen für zweisprachige Kantone (`BE`, `FR`, `VS`, `GR`) präzisieren**
+- [x] **2.2 Sprachregionen für zweisprachige Kantone (`BE`, `FR`, `VS`, `GR`) präzisieren**
   - In [src/load_bfs.py](./src/load_bfs.py) ein explizites Dictionary `BFS_LANG_OVERRIDES: dict[int, str]` (bzw. BFS-Sprachgebiete-CSV) einbauen, das nach dem Kantons-Default greift:
     - Kanton **VS** (Default im Oberwallis `'German'`, Unter-/Mittelwallis `'French'`): Sicherstellen, dass u. a. `6266` (*Sion*), `6248` (*Sierre*), `6136` (*Martigny*), `6153` (*Monthey*) `'French'` erhalten, während *Brig-Glis* (`6002`), *Visp* (`6297`), *Naters* (`6007`) `'German'` erhalten.
     - Kanton **BE**: Französischsprachiger Berner Jura (`bfs_id` 431–449, 681–716, 721–726) → `'French'`; *Biel/Bienne* (`371`) → `'German'` (Mehrheitssprache Deutsch, Zweisprachigkeit in EDA erwähnen).
