@@ -145,7 +145,7 @@ Jede Anforderung aus [TASK_DESCRIPTION.md](./TASK_DESCRIPTION.md) ist hier fest 
     ipykernel>=6.29
     openpyxl>=3.1
     ```
-- [ ] **1.3 [.gitignore](./.gitignore) um lokale Rohdaten/Caches ergänzen**
+- [x] **1.3 [.gitignore](./.gitignore) um lokale Rohdaten/Caches ergänzen**
   - Am Ende von [.gitignore](./.gitignore) hinzufügen:
     ```gitignore
     # Local raw data & scraping cache (keep exported snapshots in data/export/ if needed)

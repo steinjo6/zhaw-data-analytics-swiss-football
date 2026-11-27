@@ -221,3 +221,8 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Local raw data & scraping cache (keep exported snapshots in data/export/ if needed)
+data/raw/
+data/cache/
+
