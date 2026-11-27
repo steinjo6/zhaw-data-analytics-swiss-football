@@ -37,8 +37,8 @@ Das Projekt untersucht den Zusammenhang zwischen **regionaler Wirtschaftskraft &
 | :--- | :--- | :--- | :--- |
 | Datenbank-Schema | [sql/schema.sql](./sql/schema.sql) | ✅ Abgeschlossen | Tabellen `municipalities`, `clubs`, `players` inkl. Indizes angelegt |
 | DB-Verbindung | [src/db.py](./src/db.py) | ✅ Abgeschlossen | Non-destruktiver Verbindungstest mit Tabellen-Counts; Schema-Reset nur noch über `--reset-schema` + Bestätigung |
-| Abhängigkeiten | [requirements.txt](./requirements.txt) | ⬜ Offen | Datei existiert, aktuell leer (0 Zeilen) |
-| Env-Vorlage | [.env.example](./.env.example) | ⬜ Offen | Datei existiert, aktuell leer (0 Zeilen) |
+| Abhängigkeiten | [requirements.txt](./requirements.txt) | ✅ Abgeschlossen | Alle 19 Pakete definiert und Installation in `.venv` (Python 3.14) verifiziert |
+| Env-Vorlage | [.env.example](./.env.example) | ✅ Abgeschlossen | `DATABASE_URL`-Platzhalterzeile eingetragen |
 | AI-Protokoll | [docs/AI_USAGE.md](./docs/AI_USAGE.md) | ✅ Angelegt (laufend) | Initial-Setup (`main` mit Gemini Argon) & Roadmap-Review dokumentiert |
 | BFS-Gemeinde-Loader | [src/load_bfs.py](./src/load_bfs.py) | 🟡 Teilweise fertig | Basis (`bfs_id`, Name, Kanton, Sprache, Einwohner, Fläche) steht; 6 Spalten noch `None` |
 | Transfermarkt-Scraper | [src/scrape_tm.py](./src/scrape_tm.py) | ⬜ Offen | Datei existiert, aktuell leer (0 Zeilen) |
@@ -118,7 +118,7 @@ Jede Anforderung aus [TASK_DESCRIPTION.md](./TASK_DESCRIPTION.md) ist hier fest 
       3. Prüft für `municipalities`, `clubs`, `players` per `to_regclass('public.<tabelle>')`, ob die Tabellen existieren, und gibt deren aktuelle Zeilenanzahl (`SELECT COUNT(*)`) aus.
       4. Führt **NICHT** `sql/schema.sql` aus.
     - **Nur mit `python -m src.db --reset-schema`:** Fragt im Terminal aktiv ` tippe 'RESET' zum Bestätigen: ` ab (oder Flag `--yes`) und führt erst dann `run_sql_file("sql/schema.sql")` aus.
-- [ ] **1.2 [requirements.txt](./requirements.txt) & [.env.example](./.env.example) befüllen**
+- [x] **1.2 [requirements.txt](./requirements.txt) & [.env.example](./.env.example) befüllen**
   - **Inhalt für [.env.example](./.env.example) (exakt 1 Zeile):**
     ```env
     DATABASE_URL=postgresql://<user>:<password>@<neon-host>/neondb?sslmode=require
